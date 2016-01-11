@@ -4,8 +4,8 @@ import java.io.File;
 
 public class Plik {
 
-	File f;
-	boolean dostepny;
+	private File f;
+	private boolean dostepny;
 	
 	public Plik (File f,boolean dostepny){
 		this.f=f;

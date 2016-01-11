@@ -1,28 +1,21 @@
 package sender;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-
-import com.dropbox.core.DbxClient;
-import com.dropbox.core.DbxEntry;
 import com.dropbox.core.DbxException;
-import com.dropbox.core.DbxWriteMode;
 
+import dropbox.Dropbox;
 import dropbox.Plik;
-import skaner.Skaner;
-import timer.Timer;
 
 public class Sender implements Runnable{
 
-	Skaner skaner;
-	DbxClient client;
-	Timer timer;
 	
-	public Sender(Skaner skaner, DbxClient client, Timer timer){
-		this.skaner = skaner;
-		this.client = client;
-		this.timer = timer;
+	private Dropbox dropbox;
+	private SenderService parent;
+	
+	public Sender(Dropbox dropbox, SenderService parent){
+		this.dropbox = dropbox;
+		this.parent = parent;
 	}
 	
 	@Override
@@ -30,15 +23,16 @@ public class Sender implements Runnable{
 		while(true){
 				Plik f = null;
 			
-				synchronized (skaner.getListaPlikow()) {
+				synchronized (parent.getSkaner().getListaPlikow()) {
 					f = dajZListy();
 				}
 				
 				try {
 					if(f != null){
-						wyslij(f.getPlik());
-						aktualizujStaty(f.getPlik());
-						skaner.usunZListy(f);
+						long rozmiarPliku = f.getPlik().length();
+						dropbox.wyslij(f.getPlik());
+						aktualizujStaty(f.getPlik(), rozmiarPliku);
+						parent.getSkaner().usunZListy(f);
 					}
 				} catch (IOException | DbxException e) {
 					System.out.println("Nie mo¿na wys³aæ pliku");
@@ -48,33 +42,14 @@ public class Sender implements Runnable{
 
 	public synchronized Plik dajZListy(){	
 		Plik f = null;
-		f = skaner.dajZListy();
+		f = parent.getSkaner().dajZListy();
 		return f;
 	}
 	
-	public boolean wyslij(File plik) throws IOException, DbxException {	
-   
-		
-    	System.out.println("Wysy³am: "+plik.getName());
+	public void aktualizujStaty(File plik, long rozmiarPliku){
+        parent.getTimer().getStaty().incrementAndGet();
+        parent.getTimer().statystyka(parent.getTimer().getStaty().get()+"  "+plik.getName()+"\n", parent.getTimer().getStaty().get(), rozmiarPliku);
         
-        File inputFile = plik;
-        FileInputStream inputStream = new FileInputStream(plik);
-        try {
-            DbxEntry.File uploadedFile = client.uploadFile(
-            		"/"+plik.getName(),
-                DbxWriteMode.add(), inputFile.length(), inputStream);
-            System.out.println("Uploaded: " + uploadedFile.toString());
-        } finally {
-            inputStream.close();
-        }
-
-        plik.delete();       
-        
-        return true;
-    }
-	
-	public void aktualizujStaty(File plik){
-        timer.getStaty().incrementAndGet();
-        timer.statystyka(timer.getStaty().get()+"  "+plik.getName()+"\n",timer.getStaty().get(),plik.length());
+        System.out.println(plik.length());
 	}
 }

@@ -9,6 +9,7 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
@@ -17,85 +18,100 @@ import com.dropbox.core.DbxException;
 import sender.SenderService;
 import skaner.Skaner;
 import skaner.SkanerService;
-import timer.TimerService;
+import timer.Timer;
 
 import java.awt.Color;
 import java.awt.Font;
 
 public class MainFrame extends JFrame{
+		
+	private static final long serialVersionUID = 1L;
+	
+	private JButton button1 = new JButton("Wybierz folder");
+	private JButton button2 = new JButton("Zamknij program");
+	
+	private JTextArea textarea3 = new JTextArea ("");
+	private JScrollPane panel1 = new JScrollPane(textarea3);
+	
+	private JLabel label1 = new JLabel("");
+	private JLabel label2 = new JLabel("");
+	private JLabel label3 = new JLabel("");
+	
+	private JFileChooser filechooser = new JFileChooser();
 	
 	
-	JButton b1 = new JButton("Wybierz folder");
-	JButton b2 = new JButton("Zamknij program");
-	
-	JTextArea t3 = new JTextArea ("");
-	JScrollPane p1 = new JScrollPane(t3);
-	
-	JLabel l1 = new JLabel("");
-	JLabel l2 = new JLabel("");
-	JLabel l3 = new JLabel("");
-	
-	int iloscWatkow=0;
-	String sciezka;
-	String stat="";
-	JFileChooser fc = new JFileChooser();
-	boolean bool=true;
-	int sekundy = 0;
-	int iloscPl = 0;
-	long rozmiarPl = 0;
-	
-	
-	Skaner skaner = null;
+	private Skaner skaner = null;
+	private Timer timer = null;
 
 	public static void main(String[] args) throws IOException, DbxException{
 		
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				MainFrame ex = new MainFrame();
-				ex.setVisible(true);
-				ex.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-          
-				Keys keys = new Keys();
 				
 				ConfigLoader config = new ConfigLoader();
-				try {
-					config.odczytParam(keys.getPlikKonfiguracyjny());
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				config.odczytParam(Keys.plikKonfiguracyjny);
 				
 				Dropbox dropbox = new Dropbox(config.getToken());
 				try {
 					dropbox.polacz();
 				} catch (IOException | DbxException e) {
-					// TODO Auto-generated catch block
+					JOptionPane.showMessageDialog(null, "Error: "+e.getMessage());
 					e.printStackTrace();
+					System.exit(0);
 				}
 				
-				SkanerService skanerService = new SkanerService(config.sciezka);
+				SkanerService skanerService = new SkanerService(config.getSciezka());
 				skanerService.inicjujSkaner();
 				
-				TimerService timerService = new TimerService(ex);
+				Timer timerService = new Timer();
 				timerService.inicjujTimer();
 				
-				SenderService senderService = new SenderService(dropbox.client, config.iloscWatkow, skanerService.getSkaner(), timerService.getTimer());
+				SenderService senderService = new SenderService(dropbox, config.getIloscWatkow(), skanerService.getSkaner(), timerService);
 				senderService.rozpocznijWysylanie();
+				
+				MainFrame ex = new MainFrame(timerService);
+				ex.setVisible(true);
+				ex.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			}});
 		
 	}
 	
-	public void aktualizujStatystyki(String staty){
-		t3.setText(staty);
+	public void wystartujTimer(){
+		Thread aktualizator = new Thread(){
+			@Override
+			public void run(){
+				while(true){
+					try {
+						aktualizujStatystyki(timer.getStat());
+						aktualizujStatystyki(timer.getSredniaIB(), timer.getSrednia(), timer.getRozmiarPl());
+					
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		};
+		
+		aktualizator.start();
 	}
 	
-	public void aktualizujStatystyki(String sredniaIB, String srednia){
-		l1.setText("£¹czna iloœæ bajtów wys³anych: " + rozmiarPl);
-		l2.setText("Œrednia iloœæ bajtów na sekunde: " + sredniaIB);
-		l3.setText("Œrednia iloœæ plików na sekunde: " + srednia);
+	public void aktualizujStatystyki(String stat){
+		textarea3.setText(stat);
+	}
+	
+	public void aktualizujStatystyki(double sredniaIB, double srednia, long rozmiarPlikow){
+		
+		System.out.println("£¹czna iloœæ bajtów wys³anych: " + rozmiarPlikow);
+		System.out.println("Œrednia iloœæ bajtów na sekunde: " + sredniaIB);
+		System.out.println("Œrednia iloœæ plików na sekunde: " + srednia);
+		
+		label1.setText("£¹czna iloœæ bajtów wys³anych: " + rozmiarPlikow);
+		label2.setText("Œrednia iloœæ bajtów na sekunde: " + sredniaIB);
+		label3.setText("Œrednia iloœæ plików na sekunde: " + srednia);
 	}
 
-	public MainFrame() {
+	public MainFrame(Timer timer) {
 		setBackground(Color.DARK_GRAY);
 		
 		setTitle("Dropbox app");
@@ -104,46 +120,49 @@ public class MainFrame extends JFrame{
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		getContentPane().setLayout(null);
 		
-		b1.setBounds(25,381,150,40);
-		b2.setBounds(375,381,150,40);
+		button1.setBounds(25,381,150,40);
+		button2.setBounds(375,381,150,40);
 		
-		p1.setBounds(25,50,500,320);
-		l1.setFont(new Font("Tahoma", Font.PLAIN, 13));
+		panel1.setBounds(25,50,500,320);
+		label1.setFont(new Font("Tahoma", Font.PLAIN, 13));
 		
-		l1.setBounds(25,430,700,40);
-		l2.setFont(new Font("Tahoma", Font.PLAIN, 13));
-		l2.setBounds(25,470,700,40);
-		l3.setFont(new Font("Tahoma", Font.PLAIN, 13));
-		l3.setBounds(25,510,700,40);
+		label1.setBounds(25,430,700,40);
+		label2.setFont(new Font("Tahoma", Font.PLAIN, 13));
+		label2.setBounds(25,470,700,40);
+		label3.setFont(new Font("Tahoma", Font.PLAIN, 13));
+		label3.setBounds(25,510,700,40);
 		
-		getContentPane().add(p1);
-		getContentPane().add(b1);
-		getContentPane().add(b2);
-		getContentPane().add(l1);
-		getContentPane().add(l2);
-		getContentPane().add(l3);
+		getContentPane().add(panel1);
+		getContentPane().add(button1);
+		getContentPane().add(button2);
+		getContentPane().add(label1);
+		getContentPane().add(label2);
+		getContentPane().add(label3);
 		
 		JLabel lblWysanePliki = new JLabel("Wys³ane pliki :");
 		lblWysanePliki.setFont(new Font("Tahoma", Font.PLAIN, 16));
 		lblWysanePliki.setBounds(25, 19, 139, 20);
 		getContentPane().add(lblWysanePliki);
 		
-		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		b1.addActionListener(new ActionListener() {
+		filechooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		button1.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
             	
-            	if(fc.showOpenDialog(null)==JFileChooser.APPROVE_OPTION){
-        			File plik=fc.getSelectedFile();
+            	if(filechooser.showOpenDialog(null)==JFileChooser.APPROVE_OPTION){
+        			File plik=filechooser.getSelectedFile();
         			if(plik.isDirectory()) skaner.ustawFolder(plik);
             	}
             }
 		});
 		
-		b2.addActionListener(new ActionListener() {
+		button2.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
             	System.exit(0);
             }
 		});
 
+		this.timer = timer;
+		
+		wystartujTimer();
 	}
 }

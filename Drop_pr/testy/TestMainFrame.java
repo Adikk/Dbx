@@ -21,7 +21,7 @@ public class TestMainFrame {
 	public void testOdczytParam() throws IOException{
 		Keys keys = new Keys();
 		ConfigLoader config = new ConfigLoader();
-		String wynik = config.odczytParam(keys.getPlikKonfiguracyjny());
+		String wynik = config.odczytParam(keys.plikKonfiguracyjny);
 		
 		String przewidywany = "5 C:/Users/Marian/Desktop/test yMV2wfed6gAAAAAAAAAABt_dN6oBaKQ7ZMc6nq2d6DN7nCfJY4vId7V-DiWXcOEf";
 		
@@ -33,7 +33,7 @@ public class TestMainFrame {
 		
 		Keys keys = new Keys();
 		ConfigLoader config = new ConfigLoader();
-		config.odczytParam(keys.getPlikKonfiguracyjny());
+		config.odczytParam(keys.plikKonfiguracyjny);
 
 		Dropbox dropbox = new Dropbox(config.getToken());
 		dropbox.polacz();

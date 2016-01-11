@@ -4,8 +4,8 @@ import java.io.File;
 
 public class SkanerService {
 
-	String sciezka;
-	Skaner skaner;
+	private String sciezka;
+	private Skaner skaner;
 	
 	public SkanerService(String sciezka){
 		this.sciezka = sciezka;

@@ -8,7 +8,7 @@ import dropbox.Plik;
 
 public class Skaner implements Runnable{
 
-	ArrayList<Plik> listaPlikow = new ArrayList<Plik>();
+	private ArrayList<Plik> listaPlikow = new ArrayList<Plik>();
 	private File folder = null;
 	
 	public Skaner(File wejsciowy){
@@ -42,11 +42,8 @@ public class Skaner implements Runnable{
         for (final File fileEntry : folder.listFiles()) {
             if (fileEntry.isDirectory()) {
             	System.out.println("\nPlik o podanej œciezce jest katalogiem. Jeœli jest pusty zostanie usuniêty.");
-            	//tylko pusty katalog
             	fileEntry.delete();
             } else {
-//                System.out.println(fileEntry.getName());
-            	//Iterator dodajacy nieportarzajace sie elementy
             	boolean czyWstawic=true;
             	Iterator<Plik> iterator=listaPlikow.iterator();
             	

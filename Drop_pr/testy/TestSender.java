@@ -2,6 +2,7 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.DriverPropertyInfo;
 
 import org.junit.Test;
 
@@ -11,9 +12,10 @@ import dropbox.ConfigLoader;
 import dropbox.Dropbox;
 import dropbox.Keys;
 import sender.Sender;
+import sender.SenderService;
 import skaner.Skaner;
 import skaner.SkanerService;
-import timer.TimerService;
+import timer.Timer;
 
 public class TestSender {
 
@@ -28,7 +30,7 @@ public class TestSender {
 		
 			Keys keys = new Keys();
 			ConfigLoader config = new ConfigLoader();
-			config.odczytParam(keys.getPlikKonfiguracyjny());
+			config.odczytParam(keys.plikKonfiguracyjny);
 			Dropbox dropbox = new Dropbox(config.getToken());
 			try {
 				dropbox.polacz();
@@ -40,10 +42,13 @@ public class TestSender {
 			SkanerService skanerService = new SkanerService(config.getSciezka());
 			skanerService.inicjujSkaner();
 			
-			TimerService timerService = new TimerService(null);
+			Timer timerService = new Timer();
 			timerService.inicjujTimer();
 		
-			Sender sender = new Sender(skanerService.getSkaner(), dropbox.getClient(), timerService.getTimer());
+			
+			SenderService senderService = new SenderService(dropbox, config.getIloscWatkow(), skanerService.getSkaner(), timerService);
+			
+			Sender sender = new Sender(dropbox, senderService);
 		
 			String wynik = sender.dajZListy().getPlik().getAbsolutePath();
 		
@@ -62,7 +67,7 @@ public class TestSender {
 
 			Keys keys = new Keys();
 			ConfigLoader config = new ConfigLoader();
-			config.odczytParam(keys.getPlikKonfiguracyjny());
+			config.odczytParam(keys.plikKonfiguracyjny);
 			Dropbox dropbox = new Dropbox(config.getToken());
 			try {
 				dropbox.polacz();
@@ -71,15 +76,17 @@ public class TestSender {
 				e.printStackTrace();
 			}
 			
-			SkanerService skanerService = new SkanerService(config.getSciezka());
-			skanerService.inicjujSkaner();
+//			SkanerService skanerService = new SkanerService(config.getSciezka());
+//			skanerService.inicjujSkaner();
+//			
+//			Timer timerService = new Timer();
+//			timerService.inicjujTimer();
+//		
+//			SenderService senderService = new SenderService(dropbox, config.getIloscWatkow(), skanerService.getSkaner(), timerService);
+//			
+//			Sender sender = new Sender(dropbox, senderService);
 			
-			TimerService timerService = new TimerService(null);
-			timerService.inicjujTimer();
-		
-			Sender sender = new Sender(skanerService.getSkaner(), dropbox.getClient(), timerService.getTimer());
-			
-			boolean wynik = sender.wyslij(file[0]);
+			boolean wynik = dropbox.wyslij(file[0]);
 			boolean przewidywany = true;
 		
 			assertEquals(przewidywany, wynik);

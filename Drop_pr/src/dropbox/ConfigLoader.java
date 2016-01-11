@@ -1,27 +1,25 @@
 package dropbox;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import javax.swing.JOptionPane;
+
 public class ConfigLoader {
 
-	int iloscWatkow=0;
-	String sciezka;
-	String token;
-	
-//	String nazwa = "config.properties";
+	private int iloscWatkow=0;
+	private String sciezka;
+	private String token;
 	
 	public ConfigLoader(){
 	}
 	
-	public String odczytParam(String nazwa) throws IOException{
+	public String odczytParam(String nazwa){
 		String result = "";
 		InputStream inputStream;
 		try {
 			Properties prop = new Properties();
-//			String nazwa = "config.properties";
  
 			inputStream = getClass().getClassLoader().getResourceAsStream(nazwa);
  
@@ -39,6 +37,10 @@ public class ConfigLoader {
 			inputStream.close();
 		} catch (Exception e) {
 			System.out.println("Exception: " + e);
+			
+			JOptionPane.showMessageDialog(null, "Error: "+e.getMessage());
+			e.printStackTrace();
+			System.exit(0);
 		} 
 		return result;
 	}
